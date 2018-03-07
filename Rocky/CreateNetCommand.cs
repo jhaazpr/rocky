@@ -19,17 +19,25 @@ namespace Rocky
 
         protected override Result RunCommand(Rhino.RhinoDoc doc, RunMode mode)
         {
-            using (GetObject getObjectAction = new GetObject())
+            const Rhino.DocObjects.ObjectType selFilter = Rhino.DocObjects.ObjectType.PolysrfFilter
+                                                        | Rhino.DocObjects.ObjectType.Extrusion;
+            Rhino.DocObjects.ObjRef boxObjRef;
+            // Guid boxObjGuid = Guid.Empty;
+
+            Rhino.Commands.Result getObjResult = Rhino.Input.RhinoGet.GetOneObject("Select the box", false, selFilter, out boxObjRef);
+            if (getObjResult == Result.Success)
             {
-                getObjectAction.SetCommandPrompt("Select box for net");
-                if (getObjectAction.Get() != GetResult.Object)
-                {
-                    RhinoApp.WriteLine("Must select a box.");
-                    return getObjectAction.CommandResult();
-                }
-                RhinoApp.WriteLine("Result is {0}",getObjectAction.Object(0));
+                Brep boxBrep = boxObjRef.Brep();
+                Rhino.Geometry.BoundingBox bbox = boxBrep.GetBoundingBox(true);
+                Point3d bboxMin = bbox.Min;
+                Point3d bboxMax = bbox.Max;
+                double xDist = bboxMax.X - bboxMin.X;
+                double yDist = bboxMax.Y - bboxMin.Y;
+                double zDist = bboxMax.Z - bboxMin.Z;
+                RhinoApp.WriteLine("Z is {0}", zDist);
                 return Result.Success;
-            }   
+            }
+            return Result.Failure;
         }
     }
 }
