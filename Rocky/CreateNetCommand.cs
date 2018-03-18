@@ -35,17 +35,9 @@ namespace Rocky
                 double yDist = bboxMax.Y - bboxMin.Y;
                 double zDist = bboxMax.Z - bboxMin.Z;
 
-                Point3d origin = new Point3d(0, 0, 0);
-                Point3d xAxisPt = new Point3d(xDist, 0, 0);
-                Point3d yAxisPt = new Point3d(0, yDist, 0);
-
-                Plane xyPlane = new Plane(origin, xAxisPt, yAxisPt);
-
-                Rectangle3d rect = new Rectangle3d(xyPlane, xAxisPt, yAxisPt);
+                Point3d worldOrigin = new Point3d(0, 0, 0);
+                Rectangle3d rect = MakeRect(worldOrigin, xDist, yDist);
                 Polyline polyLine = rect.ToPolyline();
-
-                //Point3d worldOrigin = new Point3d(0, 0, 0);
-                //Rhino.Geometry.Rec
 
                 if (doc.Objects.AddPolyline(polyLine) != Guid.Empty)
                 {
@@ -56,10 +48,17 @@ namespace Rocky
             return Result.Failure;
         }
 
+        protected Rectangle3d MakeRect(Point3d origin, double width, double height)
+        {
+            Point3d xAxisPt = new Rhino.Geometry.Point3d(width, 0, 0);
+            Point3d yAxisPt = new Rhino.Geometry.Point3d(0, height, 0);
 
-        //public Rhino.Geometry.Curve MakeRectangleFromXY(double x, double y)
-        //{
-        //    Rhino.Geometry.Curve rect = new Rhino.Geometry.Curve
-        //}
+            Point3d worldOrigin = new Point3d(0, 0, 0);
+            Vector3d zVector = new Vector3d(0, 0, 1);
+            Plane worldXYPlane = new Rhino.Geometry.Plane(worldOrigin, zVector);
+
+            Rectangle3d rect = new Rectangle3d(worldXYPlane, xAxisPt, yAxisPt);
+            return rect;
+        }
     }
 }
