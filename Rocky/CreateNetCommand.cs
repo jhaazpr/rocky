@@ -27,16 +27,9 @@ namespace Rocky
             Result getObjResult = RhinoGet.GetOneObject("Select the box", false, selFilter, out boxObjRef);
             if (getObjResult == Result.Success)
             {
-                Brep boxBrep = boxObjRef.Brep();
-                BoundingBox bbox = boxBrep.GetBoundingBox(true);
-                Point3d bboxMin = bbox.Min;
-                Point3d bboxMax = bbox.Max;
-                double xDist = bboxMax.X - bboxMin.X;
-                double yDist = bboxMax.Y - bboxMin.Y;
-                double zDist = bboxMax.Z - bboxMin.Z;
-
+                Vector3d widthHeightDepthVect = getWidthHeigthDepthVect(boxObjRef);
                 Point3d worldOrigin = new Point3d(0, 0, 0);
-                Rectangle3d rect = MakeRect(worldOrigin, xDist, yDist);
+                Rectangle3d rect = MakeRect(worldOrigin, widthHeightDepthVect.X, widthHeightDepthVect.Y);
                 Polyline polyLine = rect.ToPolyline();
 
                 if (doc.Objects.AddPolyline(polyLine) != Guid.Empty)
@@ -46,6 +39,19 @@ namespace Rocky
                 }
             }
             return Result.Failure;
+        }
+
+        protected Vector3d getWidthHeigthDepthVect(Rhino.DocObjects.ObjRef boxObjRef)
+        {
+            Brep boxBrep = boxObjRef.Brep();
+            BoundingBox bbox = boxBrep.GetBoundingBox(true);
+            Point3d bboxMin = bbox.Min;
+            Point3d bboxMax = bbox.Max;
+            double xDist = bboxMax.X - bboxMin.X;
+            double yDist = bboxMax.Y - bboxMin.Y;
+            double zDist = bboxMax.Z - bboxMin.Z;
+
+            return new Vector3d(xDist, yDist, zDist);
         }
 
         protected Rectangle3d MakeRect(Point3d origin, double width, double height)
