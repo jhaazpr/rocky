@@ -33,37 +33,29 @@ namespace Rocky
             if (getObjResult == Result.Success)
             {
                 Vector3d widthHeightDepthVect = getWidthHeigthDepthVect(boxObjRef);
-                double xDist = widthHeightDepthVect.X;
-                double yDist = widthHeightDepthVect.Y;
-                double zDist = widthHeightDepthVect.Z;
 
-                // Line 4 rectangles X, Y, X, Y; all Z tall
+                RhinoList<Rectangle3d> rectList = generateNetRects(widthHeightDepthVect, thickness: BIRCH_CM);
 
-                RhinoList<Rectangle3d> rectList = new RhinoList<Rectangle3d>();
+                // Draw Rectangles
+                Polyline polyline;
+                foreach (Rectangle3d rect in rectList)
+                {
+                    polyline = rect.ToPolyline();
+                    doc.Objects.AddPolyline(polyline);
+                }
 
-                Point3d origin1 = new Point3d(xDist, 0, 0);
-                Point3d origin2 = new Point3d(xDist + yDist, 0, 0);
-                Point3d origin3 = new Point3d(xDist + yDist + xDist, 0, 0);
+                // Draw finger joints
+                Line jointLine;
+                Point3d rightEdgeBottom, rightEdgeTop;
+                foreach(Rectangle3d rect in rectList)
+                {
+                    rightEdgeBottom = rect.Corner(1) + new Vector3d(BIRCH_CM, 0, 0);
+                    rightEdgeTop = rect.Corner(2) + new Vector3d(BIRCH_CM, 0, 0);
+                    jointLine = new Line(rightEdgeBottom, rightEdgeTop);
+                    polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                    doc.Objects.AddPolyline(polyline);
+                }
 
-                Rectangle3d rect0 = MakeRect(ORIGIN, xDist, zDist);
-                Rectangle3d rect1 = MakeRect(origin1, yDist, zDist);
-                Rectangle3d rect2 = MakeRect(origin2, xDist, zDist);
-                Rectangle3d rect3 = MakeRect(origin3, yDist, zDist);
-
-                rectList.Add(rect0);
-                rectList.Add(rect1);
-                rectList.Add(rect2);
-                rectList.Add(rect3);
-
-                //Polyline polyline;
-                //foreach (Rectangle3d rect in rectList)
-                //{
-                //    polyline = rect.ToPolyline();
-                //    doc.Objects.AddPolyline(polyline);
-                //}
-                Line exampleJointLine = new Line(ORIGIN, new Point3d(0, 11, 0));
-                Polyline fingerPoly = generateFingerJoint(exampleJointLine, 2);
-                doc.Objects.AddPolyline(fingerPoly);
                 doc.Views.Redraw();
                 return Result.Success;
 
@@ -71,9 +63,37 @@ namespace Rocky
             return Result.Failure;
         }
 
+        protected RhinoList<Rectangle3d> generateNetRects(Vector3d widthHeightDepthVect,
+                                                          double thickness = 0)
+        {
+            RhinoList<Rectangle3d> rectList = new RhinoList<Rectangle3d>();
+
+            double xDist = widthHeightDepthVect.X;
+            double yDist = widthHeightDepthVect.Y;
+            double zDist = widthHeightDepthVect.Z;
+
+            // Add thickness for fingering gaps
+            Point3d origin1 = new Point3d(xDist + (2 * thickness), 0, 0);
+            Point3d origin2 = new Point3d(xDist + yDist + (4 * thickness), 0, 0);
+            Point3d origin3 = new Point3d(xDist + yDist + xDist + (6 * thickness), 0, 0);
+
+            // Line 4 rectangles X, Y, X, Y; all Z tall
+            Rectangle3d rect0 = MakeRect(ORIGIN, xDist, zDist);
+            Rectangle3d rect1 = MakeRect(origin1, yDist, zDist);
+            Rectangle3d rect2 = MakeRect(origin2, xDist, zDist);
+            Rectangle3d rect3 = MakeRect(origin3, yDist, zDist);
+
+            rectList.Add(rect0);
+            rectList.Add(rect1);
+            rectList.Add(rect2);
+            rectList.Add(rect3);
+
+            return rectList;
+        }
+
         protected Polyline generateFingerJoint(Line jointLine, double thickness)
         {
-            Point3d currPoint = new Point3d(0, jointLine.FromY, 0);
+            Point3d currPoint = new Point3d(jointLine.FromX, jointLine.FromY, 0);
             Point3dList points = new Point3dList();
             points.Add(currPoint);
 
