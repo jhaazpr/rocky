@@ -51,16 +51,51 @@ namespace Rocky
                 rectList.Add(rect3);
 
                 Polyline polyline;
-                foreach (Rectangle3d rect in rectList)
-                {
-                    polyline = rect.ToPolyline();
-                    doc.Objects.AddPolyline(polyline);
-                }
+                //foreach (Rectangle3d rect in rectList)
+                //{
+                //    polyline = rect.ToPolyline();
+                //    doc.Objects.AddPolyline(polyline);
+                //}
+                Polyline fingerPoly = generateFingerJoint(.5, 10);
+                doc.Objects.AddPolyline(fingerPoly);
                 doc.Views.Redraw();
                 return Result.Success;
 
             }
             return Result.Failure;
+        }
+
+        protected Polyline generateFingerJoint(double thickness, double length)
+        {
+            Point3d currPoint = new Point3d(0, 0, 0);
+            Rhino.Collections.Point3dList points = new Rhino.Collections.Point3dList();
+            points.Add(currPoint);
+
+            // An even finger count means the finger will be drawn right of the
+            // center line
+            double fingerCount = 0;
+            double fingerDirection = -1;
+
+            // Loop invariant: incrementing and placing current point will always
+            // result in a point before the maximum length
+            while (currPoint.Y + thickness <= length)
+            {
+                // Multiplier for right finger on even, vice versa for odd
+                fingerDirection = fingerCount % 2 == 0 ? 1 : -1;
+
+                currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(0, thickness, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
+                points.Add(currPoint);
+
+                fingerCount += 1;
+            }
+
+            // Finish the last truncated finger if necessary
+
+            return new Polyline(points);
         }
 
         protected Vector3d getWidthHeigthDepthVect(Rhino.DocObjects.ObjRef boxObjRef)
