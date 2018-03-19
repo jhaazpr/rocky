@@ -51,12 +51,12 @@ namespace Rocky
                 rectList.Add(rect3);
 
                 Polyline polyline;
-                //foreach (Rectangle3d rect in rectList)
-                //{
-                //    polyline = rect.ToPolyline();
-                //    doc.Objects.AddPolyline(polyline);
-                //}
-                Polyline fingerPoly = generateFingerJoint(.5, 10);
+                foreach (Rectangle3d rect in rectList)
+                {
+                    polyline = rect.ToPolyline();
+                    doc.Objects.AddPolyline(polyline);
+                }
+                Polyline fingerPoly = generateFingerJoint(2, 0, 11);
                 doc.Objects.AddPolyline(fingerPoly);
                 doc.Views.Redraw();
                 return Result.Success;
@@ -65,9 +65,9 @@ namespace Rocky
             return Result.Failure;
         }
 
-        protected Polyline generateFingerJoint(double thickness, double length)
+        protected Polyline generateFingerJoint(double thickness, double startingY, double stoppingY)
         {
-            Point3d currPoint = new Point3d(0, 0, 0);
+            Point3d currPoint = new Point3d(0, startingY, 0);
             Rhino.Collections.Point3dList points = new Rhino.Collections.Point3dList();
             points.Add(currPoint);
 
@@ -77,8 +77,8 @@ namespace Rocky
             double fingerDirection = -1;
 
             // Loop invariant: incrementing and placing current point will always
-            // result in a point before the maximum length
-            while (currPoint.Y + thickness <= length)
+            // result in a point before the stoppingY
+            while (currPoint.Y + thickness <= stoppingY)
             {
                 // Multiplier for right finger on even, vice versa for odd
                 fingerDirection = fingerCount % 2 == 0 ? 1 : -1;
@@ -94,6 +94,16 @@ namespace Rocky
             }
 
             // Finish the last truncated finger if necessary
+            if (currPoint.Y < stoppingY)
+            {
+                fingerDirection *= -1;
+                currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(0, stoppingY - currPoint.Y, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
+                points.Add(currPoint);
+            }
 
             return new Polyline(points);
         }
