@@ -96,7 +96,8 @@ namespace Rocky
             return rectList;
         }
 
-        protected Polyline generateFingerJoint(Line jointLine, double thickness)
+        protected Polyline generateFingerJoint(Line jointLine, double thickness,
+                                              bool leftOnly = false, bool rightOnly = false)
         {
             Point3d currPoint = new Point3d(jointLine.FromX, jointLine.FromY, 0);
             Point3dList points = new Point3dList();
@@ -106,6 +107,7 @@ namespace Rocky
             // center line
             double fingerCount = 0;
             double fingerDirection = -1;
+            bool skipFinger = false;
 
             // Loop invariant: incrementing and placing current point will always
             // result in a point before the stoppingY
@@ -114,12 +116,26 @@ namespace Rocky
                 // Multiplier for right finger on even, vice versa for odd
                 fingerDirection = fingerCount % 2 == 0 ? 1 : -1;
 
-                currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
-                points.Add(currPoint);
-                currPoint += new Vector3d(0, thickness, 0);
-                points.Add(currPoint);
-                currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
-                points.Add(currPoint);
+                // If we have leftOnly or rightOnly and we will make a finger
+                // in the right or left direction, respectively, then skip
+                // that and just increment upwards
+                skipFinger = fingerCount == 1 && leftOnly
+                    || fingerCount == -1 && rightOnly;
+
+                if (skipFinger)
+                {
+                    currPoint += new Vector3d(0, thickness, 0);
+                    points.Add(currPoint);
+                }
+                else
+                {
+                    currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
+                    points.Add(currPoint);
+                    currPoint += new Vector3d(0, thickness, 0);
+                    points.Add(currPoint);
+                    currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
+                    points.Add(currPoint);
+                }
 
                 fingerCount += 1;
             }
@@ -127,13 +143,24 @@ namespace Rocky
             // Finish the last truncated finger if necessary
             if (currPoint.Y < jointLine.ToY)
             {
-                fingerDirection *= -1;
-                currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
-                points.Add(currPoint);
-                currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
-                points.Add(currPoint);
-                currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
-                points.Add(currPoint);
+                skipFinger = fingerCount == 1 && leftOnly
+                    || fingerCount == -1 && rightOnly;
+
+                if (skipFinger)
+                {
+                    currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
+                    points.Add(currPoint);
+                }
+                else
+                {
+                    fingerDirection *= -1;
+                    currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
+                    points.Add(currPoint);
+                    currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
+                    points.Add(currPoint);
+                    currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
+                    points.Add(currPoint);
+                }
             }
 
             return new Polyline(points);
