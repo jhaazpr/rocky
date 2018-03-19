@@ -36,31 +36,31 @@ namespace Rocky
 
                 RhinoList<Rectangle3d> rectList = generateNetRects(widthHeightDepthVect, thickness: BIRCH_CM);
 
-                // Draw Rectangles
                 Polyline polyline;
-                foreach (Rectangle3d rect in rectList)
-                {
-                    polyline = rect.ToPolyline();
-                    doc.Objects.AddPolyline(polyline);
-                }
-
-                // Draw finger joints
+                Polyline[] explodedLines;
                 Line jointLine;
                 Point3d rightEdgeBottom, rightEdgeTop;
-                foreach(Rectangle3d rect in rectList)
+
+                // Draw the first finger before iterating
+                jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
+                polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                doc.Objects.AddPolyline(polyline);
+
+                foreach (Rectangle3d rect in rectList)
                 {
+                    // First draw fingers
                     rightEdgeBottom = rect.Corner(1);
                     rightEdgeTop = rect.Corner(2);
                     jointLine = new Line(rightEdgeBottom, rightEdgeTop);
                     polyline = generateFingerJoint(jointLine, BIRCH_CM);
                     doc.Objects.AddPolyline(polyline);
+
+                    // Then draw rectangle itself, explode, and remove seams
+                    polyline = rect.ToPolyline();
+                    explodedLines = polyline.BreakAtAngles(Math.PI / 2);
+                    doc.Objects.AddPolyline(explodedLines[0]);
+                    doc.Objects.AddPolyline(explodedLines[2]);
                 }
-
-                // Go back and draw the first once
-                jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
-                polyline = generateFingerJoint(jointLine, BIRCH_CM);
-                doc.Objects.AddPolyline(polyline);
-
                 doc.Views.Redraw();
                 return Result.Success;
 
