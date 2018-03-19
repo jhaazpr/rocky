@@ -49,8 +49,8 @@ namespace Rocky
                 Point3d rightEdgeBottom, rightEdgeTop;
                 foreach(Rectangle3d rect in rectList)
                 {
-                    rightEdgeBottom = rect.Corner(1) + new Vector3d(BIRCH_CM, 0, 0);
-                    rightEdgeTop = rect.Corner(2) + new Vector3d(BIRCH_CM, 0, 0);
+                    rightEdgeBottom = rect.Corner(1);
+                    rightEdgeTop = rect.Corner(2);
                     jointLine = new Line(rightEdgeBottom, rightEdgeTop);
                     polyline = generateFingerJoint(jointLine, BIRCH_CM);
                     doc.Objects.AddPolyline(polyline);
@@ -78,10 +78,10 @@ namespace Rocky
             Point3d origin3 = new Point3d(xDist + yDist + xDist + (6 * thickness), 0, 0);
 
             // Line 4 rectangles X, Y, X, Y; all Z tall
-            Rectangle3d rect0 = MakeRect(ORIGIN, xDist, zDist);
-            Rectangle3d rect1 = MakeRect(origin1, yDist, zDist);
-            Rectangle3d rect2 = MakeRect(origin2, xDist, zDist);
-            Rectangle3d rect3 = MakeRect(origin3, yDist, zDist);
+            Rectangle3d rect0 = MakeRect(ORIGIN, xDist, zDist, margin: BIRCH_CM);
+            Rectangle3d rect1 = MakeRect(origin1, yDist, zDist, margin: BIRCH_CM);
+            Rectangle3d rect2 = MakeRect(origin2, xDist, zDist, margin: BIRCH_CM);
+            Rectangle3d rect3 = MakeRect(origin3, yDist, zDist, margin: BIRCH_CM);
 
             rectList.Add(rect0);
             rectList.Add(rect1);
@@ -147,13 +147,15 @@ namespace Rocky
             return new Vector3d(xDist, yDist, zDist);
         }
 
-        protected Rectangle3d MakeRect(Point3d origin, double width, double height)
+        protected Rectangle3d MakeRect(Point3d origin, double width, double height,
+                                      double margin = 0)
         {
-            Point3d xAxisPt = new Point3d(width, 0, 0) + origin;
-            Point3d yAxisPt = new Point3d(0, height, 0) + origin;
+            Point3d leftAdjustedOrigin = origin + new Point3d(-margin, 0, 0);
+            Point3d xAxisPt = new Point3d(width + (2 * margin), 0, 0) + leftAdjustedOrigin;
+            Point3d yAxisPt = new Point3d(0, height, 0) + leftAdjustedOrigin;
 
             Vector3d zVector = new Vector3d(0, 0, 1);
-            Plane worldXYPlane = new Plane(origin, zVector);
+            Plane worldXYPlane = new Plane(leftAdjustedOrigin, zVector);
 
             Rectangle3d rect = new Rectangle3d(worldXYPlane, xAxisPt, yAxisPt);
             return rect;
