@@ -15,6 +15,9 @@ namespace Rocky
     public class CreateNetCommand : Rhino.Commands.Command
     {
         public static readonly Point3d ORIGIN = new Point3d(0, 0, 0);
+        public static readonly double BIRCH_MM = 3.17;
+        public static readonly double BIRCH_CM = .317;
+
         public override string EnglishName
         {
             get { return "CreateNet"; }
