@@ -56,6 +56,11 @@ namespace Rocky
                     doc.Objects.AddPolyline(polyline);
                 }
 
+                // Go back and draw the first once
+                jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
+                polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                doc.Objects.AddPolyline(polyline);
+
                 doc.Views.Redraw();
                 return Result.Success;
 
