@@ -50,13 +50,14 @@ namespace Rocky
                 rectList.Add(rect2);
                 rectList.Add(rect3);
 
-                Polyline polyline;
-                foreach (Rectangle3d rect in rectList)
-                {
-                    polyline = rect.ToPolyline();
-                    doc.Objects.AddPolyline(polyline);
-                }
-                Polyline fingerPoly = generateFingerJoint(2, 0, 11);
+                //Polyline polyline;
+                //foreach (Rectangle3d rect in rectList)
+                //{
+                //    polyline = rect.ToPolyline();
+                //    doc.Objects.AddPolyline(polyline);
+                //}
+                Line exampleJointLine = new Line(ORIGIN, new Point3d(0, 11, 0));
+                Polyline fingerPoly = generateFingerJoint(exampleJointLine, 2);
                 doc.Objects.AddPolyline(fingerPoly);
                 doc.Views.Redraw();
                 return Result.Success;
@@ -65,9 +66,9 @@ namespace Rocky
             return Result.Failure;
         }
 
-        protected Polyline generateFingerJoint(double thickness, double startingY, double stoppingY)
+        protected Polyline generateFingerJoint(Line jointLine, double thickness)
         {
-            Point3d currPoint = new Point3d(0, startingY, 0);
+            Point3d currPoint = new Point3d(0, jointLine.FromY, 0);
             Rhino.Collections.Point3dList points = new Rhino.Collections.Point3dList();
             points.Add(currPoint);
 
@@ -78,7 +79,7 @@ namespace Rocky
 
             // Loop invariant: incrementing and placing current point will always
             // result in a point before the stoppingY
-            while (currPoint.Y + thickness <= stoppingY)
+            while (currPoint.Y + thickness <= jointLine.ToY)
             {
                 // Multiplier for right finger on even, vice versa for odd
                 fingerDirection = fingerCount % 2 == 0 ? 1 : -1;
@@ -94,12 +95,12 @@ namespace Rocky
             }
 
             // Finish the last truncated finger if necessary
-            if (currPoint.Y < stoppingY)
+            if (currPoint.Y < jointLine.ToY)
             {
                 fingerDirection *= -1;
                 currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
                 points.Add(currPoint);
-                currPoint += new Vector3d(0, stoppingY - currPoint.Y, 0);
+                currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
                 points.Add(currPoint);
                 currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
                 points.Add(currPoint);
