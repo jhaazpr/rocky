@@ -2,6 +2,8 @@
 using Rhino;
 using Rhino.Commands;
 using Rhino.Geometry;
+using Rhino.Collections;
+using Rhino.DocObjects;
 using Rhino.Input;
 using Rhino.Input.Custom;
 using Rhino.UI;
@@ -34,7 +36,7 @@ namespace Rocky
 
                 // Line 4 rectangles X, Y, X, Y; all Z tall
 
-                Rhino.Collections.RhinoList<Rectangle3d> rectList = new Rhino.Collections.RhinoList<Rectangle3d>();
+                RhinoList<Rectangle3d> rectList = new RhinoList<Rectangle3d>();
 
                 Point3d origin1 = new Point3d(xDist, 0, 0);
                 Point3d origin2 = new Point3d(xDist + yDist, 0, 0);
@@ -69,7 +71,7 @@ namespace Rocky
         protected Polyline generateFingerJoint(Line jointLine, double thickness)
         {
             Point3d currPoint = new Point3d(0, jointLine.FromY, 0);
-            Rhino.Collections.Point3dList points = new Rhino.Collections.Point3dList();
+            Point3dList points = new Point3dList();
             points.Add(currPoint);
 
             // An even finger count means the finger will be drawn right of the
