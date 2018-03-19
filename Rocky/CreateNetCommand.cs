@@ -12,6 +12,7 @@ namespace Rocky
 {
     public class CreateNetCommand : Rhino.Commands.Command
     {
+        public static readonly Point3d ORIGIN = new Point3d(0, 0, 0);
         public override string EnglishName
         {
             get { return "CreateNet"; }
@@ -35,12 +36,11 @@ namespace Rocky
 
                 Rhino.Collections.RhinoList<Rectangle3d> rectList = new Rhino.Collections.RhinoList<Rectangle3d>();
 
-                Point3d worldOrigin = new Point3d(0, 0, 0);
                 Point3d origin1 = new Point3d(xDist, 0, 0);
                 Point3d origin2 = new Point3d(xDist + yDist, 0, 0);
                 Point3d origin3 = new Point3d(xDist + yDist + xDist, 0, 0);
 
-                Rectangle3d rect0 = MakeRect(worldOrigin, xDist, zDist);
+                Rectangle3d rect0 = MakeRect(ORIGIN, xDist, zDist);
                 Rectangle3d rect1 = MakeRect(origin1, yDist, zDist);
                 Rectangle3d rect2 = MakeRect(origin2, xDist, zDist);
                 Rectangle3d rect3 = MakeRect(origin3, yDist, zDist);
