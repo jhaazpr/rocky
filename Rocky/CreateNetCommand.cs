@@ -43,7 +43,7 @@ namespace Rocky
 
                 // Draw the first finger before iterating
                 jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
-                polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                polyline = generateFingerJoint(jointLine, BIRCH_CM, rightOnly: true);
                 doc.Objects.AddPolyline(polyline);
 
                 foreach (Rectangle3d rect in rectList)
@@ -105,8 +105,8 @@ namespace Rocky
 
             // An even finger count means the finger will be drawn right of the
             // center line
-            double fingerCount = 0;
-            double fingerDirection = -1;
+            int fingerCount = 0;
+            int fingerDirection = -1;
             bool skipFinger = false;
 
             // Loop invariant: incrementing and placing current point will always
@@ -119,8 +119,8 @@ namespace Rocky
                 // If we have leftOnly or rightOnly and we will make a finger
                 // in the right or left direction, respectively, then skip
                 // that and just increment upwards
-                skipFinger = fingerCount == 1 && leftOnly
-                    || fingerCount == -1 && rightOnly;
+                skipFinger = fingerDirection == 1 && leftOnly
+                    || fingerDirection == -1 && rightOnly;
 
                 if (skipFinger)
                 {
@@ -143,8 +143,9 @@ namespace Rocky
             // Finish the last truncated finger if necessary
             if (currPoint.Y < jointLine.ToY)
             {
-                skipFinger = fingerCount == 1 && leftOnly
-                    || fingerCount == -1 && rightOnly;
+                fingerDirection = fingerCount % 2 == 0 ? 1 : -1;
+                skipFinger = fingerDirection == 1 && leftOnly
+                    || fingerDirection == -1 && rightOnly;
 
                 if (skipFinger)
                 {
@@ -153,7 +154,6 @@ namespace Rocky
                 }
                 else
                 {
-                    fingerDirection *= -1;
                     currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
                     points.Add(currPoint);
                     currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
