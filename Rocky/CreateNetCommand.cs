@@ -41,10 +41,13 @@ namespace Rocky
                 Line jointLine;
                 Point3d rightEdgeBottom, rightEdgeTop;
 
-                // Draw the first finger before iterating
+                // Draw the first finger leftmost before iterating
                 jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
                 polyline = generateFingerJoint(jointLine, BIRCH_CM, rightOnly: true);
                 doc.Objects.AddPolyline(polyline);
+
+                // Kludgy rectangle count but whatever
+                int rectIndex = 0;
 
                 foreach (Rectangle3d rect in rectList)
                 {
@@ -52,7 +55,16 @@ namespace Rocky
                     rightEdgeBottom = rect.Corner(1);
                     rightEdgeTop = rect.Corner(2);
                     jointLine = new Line(rightEdgeBottom, rightEdgeTop);
-                    polyline = generateFingerJoint(jointLine, BIRCH_CM);
+
+                    // Draw on both sides of seam unless we are on the rightmost rectangle
+                    if (rectIndex == 3)
+                    {
+                        polyline = generateFingerJoint(jointLine, BIRCH_CM, leftOnly: true);
+                    }
+                    else
+                    {
+                        polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                    }
                     doc.Objects.AddPolyline(polyline);
 
                     // Then draw rectangle itself, explode, and remove seams
@@ -60,6 +72,8 @@ namespace Rocky
                     explodedLines = polyline.BreakAtAngles(Math.PI / 2);
                     doc.Objects.AddPolyline(explodedLines[0]);
                     doc.Objects.AddPolyline(explodedLines[2]);
+
+                    rectIndex += 1;
                 }
                 doc.Views.Redraw();
                 return Result.Success;
