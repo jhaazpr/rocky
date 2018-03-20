@@ -45,16 +45,50 @@ namespace Rocky
                 foreach (Rhino.DocObjects.ObjRef objRef in pointObjRefs)
                 {
                     circuitPoints.Add(objRef.Point());
-                    RhinoList<Line> conduitLines = autoroute(circuitPoints);
                 }
+
+                RhinoList<Line> conduitLines = autoroute(circuitPoints);
+                foreach (Line conduitLine in conduitLines)
+                {
+                    doc.Objects.AddLine(conduitLine);
+                }
+                doc.Views.Redraw();
+                return Result.Success;
             }
 
-            return Result.Success;
+            return Result.Failure;
         }
 
         protected RhinoList<Line> autoroute(RhinoList<Point> points)
         {
-            return new RhinoList<Point>();
+            // TODO: define heuristics e.g. penalize length
+            // TODO: define cost function for heuristics, do gradient descent
+
+            // NOTE: currently we use a dumb greedy algorithm, but will change later
+
+            RhinoList<Line> conduitLines = new RhinoList<Line>();
+
+            conduitLines = naiveGreedyRoute(points);
+
+            return conduitLines;
+        }
+
+        private RhinoList<Line> naiveGreedyRoute(RhinoList<Point> points)
+        {
+            RhinoList<Line> conduitLines = new RhinoList<Line>();
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                for (int j = i + 1; j < points.Count; j++)
+                {
+                    Point3d fromPoint, toPoint;
+                    fromPoint = points[i].Location;
+                    toPoint = points[j].Location;
+                    conduitLines.Add(new Line(fromPoint, toPoint));
+                }
+            }
+
+            return conduitLines;
         }
     }
 }
