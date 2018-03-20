@@ -43,9 +43,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RockyCommand.cs" />
     <Compile Include="RockyPlugin.cs" />
     <Compile Include="CreateNetCommand.cs" />
+    <Compile Include="DefineCircuitComponentsCommand.cs" />
+    <Compile Include="ModularizeConcreteCommand.cs" />
+    <Compile Include="CreateMoldsCommand.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -8,7 +8,7 @@ using Rhino.UI;
 
 namespace Rocky
 {
-    [System.Runtime.InteropServices.Guid("${Guid2}")]
+    //[System.Runtime.InteropServices.Guid("${Guid2}")]
     public class ModularizeConcreteCommand : Rhino.Commands.Command
     {
         public ModularizeConcreteCommand()
