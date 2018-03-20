@@ -27,12 +27,15 @@ namespace Rocky
 
         public override string EnglishName
         {
-            get { return "DefineCircuitComponentsCommand"; }
+            get { return "DefineCircuitComponents"; }
         }
 
         protected override Result RunCommand(Rhino.RhinoDoc doc, RunMode mode)
         {
-            // TODO: start here modifying the behaviour of your command.
+            const Rhino.DocObjects.ObjectType selFilter = Rhino.DocObjects.ObjectType.Point;
+            Rhino.DocObjects.ObjRef[] pointObjRefs;
+
+            Result getPointsResults = RhinoGet.GetMultipleObjects("Select circuit component endpoints", false, selFilter, out pointObjRefs);
 
             return Result.Success;
         }
