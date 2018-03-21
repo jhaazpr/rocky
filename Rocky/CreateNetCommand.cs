@@ -23,71 +23,83 @@ namespace Rocky
             get { return "CreateNet"; }
         }
 
-        protected override Result RunCommand(Rhino.RhinoDoc doc, RunMode mode)
+        protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            const Rhino.DocObjects.ObjectType selFilter = Rhino.DocObjects.ObjectType.PolysrfFilter
-                                                        | Rhino.DocObjects.ObjectType.Extrusion;
-            Rhino.DocObjects.ObjRef boxObjRef;
+            const ObjectType selFilter = ObjectType.PolysrfFilter | ObjectType.Extrusion;
+            ObjRef boxObjRef;
 
             Result getObjResult = RhinoGet.GetOneObject("Select the box", false, selFilter, out boxObjRef);
             if (getObjResult == Result.Success)
             {
-                Vector3d widthHeightDepthVect = getWidthHeigthDepthVect(boxObjRef);
-                Point3d bottomRightmostPoint;
-
-                RhinoList<Rectangle3d> rectList = generateNetRects(widthHeightDepthVect, out bottomRightmostPoint,
-                                                                   thickness: BIRCH_CM);
-
-                Polyline polyline;
-                Polyline[] explodedLines;
-                Line jointLine;
-                Point3d rightEdgeBottom, rightEdgeTop;
-
-                // Draw the first finger leftmost before iterating
-                jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
-                polyline = generateFingerJoint(jointLine, BIRCH_CM, rightOnly: true);
-                doc.Objects.AddPolyline(polyline);
-
-                // Kludgy rectangle count but whatever
-                int rectIndex = 0;
-
-                foreach (Rectangle3d rect in rectList)
-                {
-                    // First draw fingers
-                    rightEdgeBottom = rect.Corner(1);
-                    rightEdgeTop = rect.Corner(2);
-                    jointLine = new Line(rightEdgeBottom, rightEdgeTop);
-
-                    // Draw on both sides of seam unless we are on the rightmost rectangle
-                    if (rectIndex == 3)
-                    {
-                        polyline = generateFingerJoint(jointLine, BIRCH_CM, leftOnly: true);
-                    }
-                    else
-                    {
-                        polyline = generateFingerJoint(jointLine, BIRCH_CM);
-                    }
-                    doc.Objects.AddPolyline(polyline);
-
-                    // Then draw rectangle itself, explode, and remove seams
-                    polyline = rect.ToPolyline();
-                    explodedLines = polyline.BreakAtAngles(Math.PI / 2);
-                    doc.Objects.AddPolyline(explodedLines[0]);
-                    doc.Objects.AddPolyline(explodedLines[2]);
-
-                    rectIndex += 1;
-                }
-
-                // Finally, draw bottom rectangle
-                Rectangle3d bottomRect = generateBottomRect(widthHeightDepthVect,
-                                                           bottomRightmostPoint);
-                doc.Objects.AddPolyline(bottomRect.ToPolyline());
-
-                doc.Views.Redraw();
+                drawNetFromObjRef(boxObjRef, doc);
                 return Result.Success;
-
             }
             return Result.Failure;
+        }
+
+        /*
+         * Wrapper function for drawing net
+         *
+         * TODO: shrinkToDimensions paramater makes sure that the resulting box
+         * is no larger than the bounding box, as opposed to making the inner
+         * void of the walls have equal dimensions as the bounding box. Use this
+         * when you are making a box that serves as a void within a larger mold.
+         *
+         */
+        protected void drawNetFromObjRef(ObjRef boxObjRef, RhinoDoc doc, bool shrinkToDimensions = false)
+        {
+            Vector3d widthHeightDepthVect = getWidthHeigthDepthVect(boxObjRef);
+            Point3d bottomRightmostPoint;
+
+            RhinoList<Rectangle3d> rectList = generateNetRects(widthHeightDepthVect, out bottomRightmostPoint,
+                                                               thickness: BIRCH_CM);
+
+            Polyline polyline;
+            Polyline[] explodedLines;
+            Line jointLine;
+            Point3d rightEdgeBottom, rightEdgeTop;
+
+            // Draw the first finger leftmost before iterating
+            jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
+            polyline = generateFingerJoint(jointLine, BIRCH_CM, rightOnly: true);
+            doc.Objects.AddPolyline(polyline);
+
+            // Kludgy rectangle count but whatever
+            int rectIndex = 0;
+
+            foreach (Rectangle3d rect in rectList)
+            {
+                // First draw fingers
+                rightEdgeBottom = rect.Corner(1);
+                rightEdgeTop = rect.Corner(2);
+                jointLine = new Line(rightEdgeBottom, rightEdgeTop);
+
+                // Draw on both sides of seam unless we are on the rightmost rectangle
+                if (rectIndex == 3)
+                {
+                    polyline = generateFingerJoint(jointLine, BIRCH_CM, leftOnly: true);
+                }
+                else
+                {
+                    polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                }
+                doc.Objects.AddPolyline(polyline);
+
+                // Then draw rectangle itself, explode, and remove seams
+                polyline = rect.ToPolyline();
+                explodedLines = polyline.BreakAtAngles(Math.PI / 2);
+                doc.Objects.AddPolyline(explodedLines[0]);
+                doc.Objects.AddPolyline(explodedLines[2]);
+
+                rectIndex += 1;
+            }
+
+            // Finally, draw bottom rectangle
+            Rectangle3d bottomRect = generateBottomRect(widthHeightDepthVect,
+                                                       bottomRightmostPoint);
+            doc.Objects.AddPolyline(bottomRect.ToPolyline());
+
+            doc.Views.Redraw();
         }
 
         protected RhinoList<Rectangle3d> generateNetRects(Vector3d widthHeightDepthVect,
