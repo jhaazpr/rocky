@@ -33,8 +33,10 @@ namespace Rocky
             if (getObjResult == Result.Success)
             {
                 Vector3d widthHeightDepthVect = getWidthHeigthDepthVect(boxObjRef);
+                Point3d bottomRightmostPoint;
 
-                RhinoList<Rectangle3d> rectList = generateNetRects(widthHeightDepthVect, thickness: BIRCH_CM);
+                RhinoList<Rectangle3d> rectList = generateNetRects(widthHeightDepthVect, out bottomRightmostPoint,
+                                                                   thickness: BIRCH_CM);
 
                 Polyline polyline;
                 Polyline[] explodedLines;
@@ -75,6 +77,12 @@ namespace Rocky
 
                     rectIndex += 1;
                 }
+
+                // Finally, draw bottom rectangle
+                Rectangle3d bottomRect = generateBottomRect(widthHeightDepthVect,
+                                                           bottomRightmostPoint);
+                doc.Objects.AddPolyline(bottomRect.ToPolyline());
+
                 doc.Views.Redraw();
                 return Result.Success;
 
@@ -83,6 +91,7 @@ namespace Rocky
         }
 
         protected RhinoList<Rectangle3d> generateNetRects(Vector3d widthHeightDepthVect,
+                                                          out Point3d bottomRightmostPoint,
                                                           double thickness = 0)
         {
             RhinoList<Rectangle3d> rectList = new RhinoList<Rectangle3d>();
@@ -107,7 +116,20 @@ namespace Rocky
             rectList.Add(rect2);
             rectList.Add(rect3);
 
+            // Set the bottomRightmost point so caller function can keep drawing
+            // where we leave off
+            bottomRightmostPoint = origin3 + new Vector3d(rect3.Width, 0, 0);
+
             return rectList;
+        }
+
+        protected Rectangle3d generateBottomRect(Vector3d widthHeightDepthVect,
+                                                 Point3d origin, double thickness = 0)
+        {
+            double xDist = widthHeightDepthVect.X;
+            double yDist = widthHeightDepthVect.Y;
+
+            return MakeRect(origin, xDist, yDist);
         }
 
         protected Polyline generateFingerJoint(Line jointLine, double thickness,
