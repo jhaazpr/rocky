@@ -88,8 +88,10 @@ namespace Rocky
             }
 
             // Finally, draw bottom rectangle
+            bottomRightmostPoint += new Vector3d(BIRCH_CM / 2, 0, 0);
             Rectangle3d bottomRect = generateBottomRect(widthHeightDepthVect,
-                                                       bottomRightmostPoint);
+                                                        bottomRightmostPoint,
+                                                        thickness: BIRCH_CM);
             doc.Objects.AddPolyline(bottomRect.ToPolyline());
 
             doc.Views.Redraw();
@@ -131,10 +133,13 @@ namespace Rocky
         protected Rectangle3d generateBottomRect(Vector3d widthHeightDepthVect,
                                                  Point3d origin, double thickness = 0)
         {
-            double xDist = widthHeightDepthVect.X;
-            double yDist = widthHeightDepthVect.Y;
+            double xDist = widthHeightDepthVect.X + (2 * thickness);
+            double yDist = widthHeightDepthVect.Y + (2 * thickness);
 
-            return MakeRect(origin, xDist, yDist);
+            Point3d leftDownAdjustedOrigin = origin + new Vector3d(-thickness, -thickness, 0);
+
+            // NOTE: maybe bad design, but we handle "margins" in this method
+            return MakeRect(origin, xDist, yDist, margin: 0);
         }
 
         protected Polyline generateFingerJoint(Line jointLine, double thickness)
@@ -199,7 +204,7 @@ namespace Rocky
         }
 
         protected Rectangle3d MakeRect(Point3d origin, double width, double height,
-                                      double margin = 0)
+                                       double margin = 0)
         {
             Point3d xAxisPt = new Point3d(width + margin, 0, 0) + origin;
             Point3d yAxisPt = new Point3d(0, height, 0) + origin;
