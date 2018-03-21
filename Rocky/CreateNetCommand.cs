@@ -61,7 +61,7 @@ namespace Rocky
 
             // Draw the first finger leftmost before iterating
             jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
-            polyline = generateFingerJoint(jointLine, BIRCH_CM, rightOnly: true);
+            polyline = generateFingerJoint(jointLine, BIRCH_CM);
             doc.Objects.AddPolyline(polyline);
 
             // Kludgy rectangle count but whatever
@@ -74,15 +74,8 @@ namespace Rocky
                 rightEdgeTop = rect.Corner(2);
                 jointLine = new Line(rightEdgeBottom, rightEdgeTop);
 
-                // Draw on both sides of seam unless we are on the rightmost rectangle
-                if (rectIndex == 3)
-                {
-                    polyline = generateFingerJoint(jointLine, BIRCH_CM, leftOnly: true);
-                }
-                else
-                {
-                    polyline = generateFingerJoint(jointLine, BIRCH_CM);
-                }
+                // Draw on both sides of seam
+                polyline = generateFingerJoint(jointLine, BIRCH_CM);
                 doc.Objects.AddPolyline(polyline);
 
                 // Then draw rectangle itself, explode, and remove seams
@@ -113,9 +106,9 @@ namespace Rocky
             double zDist = widthHeightDepthVect.Z;
 
             // Add thickness for fingering gaps
-            Point3d origin1 = new Point3d(xDist + (2 * thickness), 0, 0);
-            Point3d origin2 = new Point3d(xDist + yDist + (4 * thickness), 0, 0);
-            Point3d origin3 = new Point3d(xDist + yDist + xDist + (6 * thickness), 0, 0);
+            Point3d origin1 = ORIGIN + new Vector3d(xDist + thickness, 0, 0);
+            Point3d origin2 = origin1 + new Vector3d(yDist + thickness, 0, 0);
+            Point3d origin3 = origin2 + new Vector3d(xDist + thickness, 0, 0);
 
             // Line 4 rectangles X, Y, X, Y; all Z tall
             Rectangle3d rect0 = MakeRect(ORIGIN, xDist, zDist, margin: BIRCH_CM);
@@ -144,46 +137,34 @@ namespace Rocky
             return MakeRect(origin, xDist, yDist);
         }
 
-        protected Polyline generateFingerJoint(Line jointLine, double thickness,
-                                              bool leftOnly = false, bool rightOnly = false)
+        protected Polyline generateFingerJoint(Line jointLine, double thickness)
         {
             Point3d currPoint = new Point3d(jointLine.FromX, jointLine.FromY, 0);
             Point3dList points = new Point3dList();
             points.Add(currPoint);
 
+            double xIncr, yIncr;
+            yIncr = thickness;
+            xIncr = thickness / 2;
+
             // An even finger count means the finger will be drawn right of the
             // center line
             int fingerCount = 0;
             int fingerDirection = -1;
-            bool skipFinger = false;
 
             // Loop invariant: incrementing and placing current point will always
             // result in a point before the stoppingY
-            while (currPoint.Y + thickness <= jointLine.ToY)
+            while (currPoint.Y + yIncr <= jointLine.ToY)
             {
                 // Multiplier for right finger on even, vice versa for odd
                 fingerDirection = fingerCount % 2 == 0 ? 1 : -1;
 
-                // If we have leftOnly or rightOnly and we will make a finger
-                // in the right or left direction, respectively, then skip
-                // that and just increment upwards
-                skipFinger = fingerDirection == 1 && leftOnly
-                    || fingerDirection == -1 && rightOnly;
-
-                if (skipFinger)
-                {
-                    currPoint += new Vector3d(0, thickness, 0);
-                    points.Add(currPoint);
-                }
-                else
-                {
-                    currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
-                    points.Add(currPoint);
-                    currPoint += new Vector3d(0, thickness, 0);
-                    points.Add(currPoint);
-                    currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
-                    points.Add(currPoint);
-                }
+                currPoint += new Vector3d(xIncr * fingerDirection, 0, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(0, yIncr, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(-xIncr * fingerDirection, 0, 0);
+                points.Add(currPoint);
 
                 fingerCount += 1;
             }
@@ -192,23 +173,13 @@ namespace Rocky
             if (currPoint.Y < jointLine.ToY)
             {
                 fingerDirection = fingerCount % 2 == 0 ? 1 : -1;
-                skipFinger = fingerDirection == 1 && leftOnly
-                    || fingerDirection == -1 && rightOnly;
 
-                if (skipFinger)
-                {
-                    currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
-                    points.Add(currPoint);
-                }
-                else
-                {
-                    currPoint += new Vector3d(thickness * fingerDirection, 0, 0);
-                    points.Add(currPoint);
-                    currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
-                    points.Add(currPoint);
-                    currPoint += new Vector3d(-thickness * fingerDirection, 0, 0);
-                    points.Add(currPoint);
-                }
+                currPoint += new Vector3d(xIncr * fingerDirection, 0, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(0, jointLine.ToY - currPoint.Y, 0);
+                points.Add(currPoint);
+                currPoint += new Vector3d(-xIncr * fingerDirection, 0, 0);
+                points.Add(currPoint);
             }
 
             return new Polyline(points);
@@ -230,12 +201,12 @@ namespace Rocky
         protected Rectangle3d MakeRect(Point3d origin, double width, double height,
                                       double margin = 0)
         {
-            Point3d leftAdjustedOrigin = origin + new Point3d(-margin, 0, 0);
-            Point3d xAxisPt = new Point3d(width + (2 * margin), 0, 0) + leftAdjustedOrigin;
-            Point3d yAxisPt = new Point3d(0, height, 0) + leftAdjustedOrigin;
+            Point3d xAxisPt = new Point3d(width + margin, 0, 0) + origin;
+            Point3d yAxisPt = new Point3d(0, height, 0) + origin;
 
             Vector3d zVector = new Vector3d(0, 0, 1);
-            Plane worldXYPlane = new Plane(leftAdjustedOrigin, zVector);
+            Point3d originLeftHalfMargin = new Vector3d(-(margin / 2), 0, 0) + origin;
+            Plane worldXYPlane = new Plane(originLeftHalfMargin, zVector);
 
             Rectangle3d rect = new Rectangle3d(worldXYPlane, xAxisPt, yAxisPt);
             return rect;
