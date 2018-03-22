@@ -94,6 +94,7 @@ namespace Rocky
         private RhinoList<Line> iteratedOneSteiner(RhinoList<Point> points)
         {
             // TODO
+            return new RhinoList<Line>();
         }
     }
 }
