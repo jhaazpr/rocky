@@ -90,5 +90,10 @@ namespace Rocky
 
             return conduitLines;
         }
+
+        private RhinoList<Line> iteratedOneSteiner(RhinoList<Point> points)
+        {
+            // TODO
+        }
     }
 }
