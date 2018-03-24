@@ -46,7 +46,13 @@ namespace Rocky
          * when you are making a box that serves as a void within a larger mold.
          *
          */
-        protected void drawNetFromObjRef(ObjRef boxObjRef, RhinoDoc doc, bool shrinkToDimensions = false)
+        protected void drawNetFromObjRef(ObjRef objRef, RhinoDoc doc, bool shrinkToDimensions = false)
+        {
+            //drawBoxNet(objRef, doc);
+            drawPolyNet(objRef, doc);
+        }
+
+        private void drawBoxNet(ObjRef boxObjRef, RhinoDoc doc, bool shrinkToDimensions = false)
         {
             Vector3d widthHeightDepthVect = getWidthHeigthDepthVect(boxObjRef);
             Point3d bottomRightmostPoint;
@@ -96,6 +102,36 @@ namespace Rocky
 
             doc.Views.Redraw();
         }
+
+        private void drawPolyNet(ObjRef objRef, RhinoDoc doc, bool shrinkToDimensions = false)
+        {
+            // Get the characteristic face
+            Polyline charCurve = getCharacteristicCurve(objRef);
+
+            // Generate rectangles + polygon based on the face dimensions
+            Point3d bottomRightmostPoint;
+            RhinoList<Rectangle3d> rectList = generatePolyRects(charCurve, out bottomRightmostPoint, BIRCH_CM);
+
+            // Loop through rectangles, drawing fingers (possibly just wait for line at end)
+            // TODO
+        }
+
+        private Polyline getCharacteristicCurve(ObjRef objRef)
+        {
+            return new Polyline();
+        }
+
+        protected RhinoList<Rectangle3d> generatePolyRects(Polyline charCurve,
+                                                  out Point3d bottomRightmostPoint,
+                                                  double thickness = 0)
+        {
+            RhinoList<Rectangle3d> rectList = new RhinoList<Rectangle3d>();
+
+            bottomRightmostPoint = new Point3d(0, 0, 0);
+
+            return rectList;
+        }
+
 
         protected RhinoList<Rectangle3d> generateNetRects(Vector3d widthHeightDepthVect,
                                                           out Point3d bottomRightmostPoint,
