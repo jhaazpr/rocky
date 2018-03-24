@@ -109,13 +109,34 @@ namespace Rocky
 
              //Generate rectangles + polygon based on the face dimensions
             Point3d bottomRightmostPoint;
-            Polyline currPoly;
             RhinoList<Rectangle3d> rectList = generatePolyRects(sectionPolyline, polyDepth, out bottomRightmostPoint, BIRCH_CM);
+
+            Polyline polyline;
+            Polyline[] explodedLines;
+            Line jointLine;
+            Point3d rightEdgeBottom, rightEdgeTop;
+
+            // Draw the first finger leftmost before iterating
+            jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
+            polyline = generateFingerJoint(jointLine, BIRCH_CM);
+            doc.Objects.AddPolyline(polyline);
 
             foreach (Rectangle3d rect in rectList)
             {
-                currPoly = rect.ToPolyline();
-                doc.Objects.AddPolyline(currPoly);
+                // First draw fingers
+                rightEdgeBottom = rect.Corner(1);
+                rightEdgeTop = rect.Corner(2);
+                jointLine = new Line(rightEdgeBottom, rightEdgeTop);
+
+                // Draw on both sides of seam
+                polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                doc.Objects.AddPolyline(polyline);
+
+                // Then draw rectangle itself, explode, and remove seams
+                polyline = rect.ToPolyline();
+                explodedLines = polyline.BreakAtAngles(Math.PI / 2);
+                doc.Objects.AddPolyline(explodedLines[0]);
+                doc.Objects.AddPolyline(explodedLines[2]);
             }
             doc.Views.Redraw();
 
