@@ -140,9 +140,45 @@ namespace Rocky
             }
             doc.Views.Redraw();
 
+            // Finally, draw bottom rectangle
+            //bottomRightmostPoint += new Vector3d(BIRCH_CM / 2, 0, 0);
+            //Polyline bottomRect = generateBottomPoly(sectionPolyline,
+            //                                            bottomRightmostPoint,
+            //                                            thickness: BIRCH_CM);
+            //doc.Objects.AddPolyline(bottomRect.ToPolyline());
 
-            // Loop through rectangles, drawing fingers (possibly just wait for line at end)
-            // TODO
+            doc.Views.Redraw();
+        }
+
+        private Curve generatePolyBottomCurve(ObjRef objRef, Point3d origin,
+                                           double thickness, bool shrinkToDimensions = false)
+        {
+            // First get the section curve (not poly) and use built-in
+            // offset, not a scale transform, to increment
+            Brep brep = objRef.Brep();
+            Vector3d zNorm = new Vector3d(0, 0, 1);
+            Plane worldXYPlane = new Plane(ORIGIN, zNorm);
+            Curve[] contours = Brep.CreateContourCurves(brep, worldXYPlane);
+            Curve sectionCurve = contours[0];
+
+            if (!shrinkToDimensions) {
+                return sectionCurve;
+            }
+
+            Curve[] offsetCurves = sectionCurve.Offset(worldXYPlane, thickness,
+                                                       0, CurveOffsetCornerStyle.Sharp);
+            if (offsetCurves.Length != 1) {
+                throw new Exception("Could not properly offset curve.");
+            }
+
+            Curve offsetCurve = offsetCurves[0];
+
+            return offsetCurve;
+
+            //// Place our curve to have concentric alignment with a bounding box
+            //// anchored at the provided origin
+            //BoundingBox boundingBox = offsetCurve.GetBoundingBox(worldXYPlane);
+
         }
 
         private Polyline getSectionPolyline(ObjRef objRef)
