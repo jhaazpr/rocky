@@ -70,9 +70,6 @@ namespace Rocky
             polyline = generateFingerJoint(jointLine, BIRCH_CM);
             doc.Objects.AddPolyline(polyline);
 
-            // Kludgy rectangle count but whatever
-            int rectIndex = 0;
-
             foreach (Rectangle3d rect in rectList)
             {
                 // First draw fingers
@@ -89,8 +86,6 @@ namespace Rocky
                 explodedLines = polyline.BreakAtAngles(Math.PI / 2);
                 doc.Objects.AddPolyline(explodedLines[0]);
                 doc.Objects.AddPolyline(explodedLines[2]);
-
-                rectIndex += 1;
             }
 
             // Finally, draw bottom rectangle
