@@ -170,11 +170,20 @@ namespace Rocky
 
             Curve offsetCurve = offsetCurves[0];
 
-            return offsetCurve;
+            // Place our curve to have concentric alignment with a bounding box
+            // anchored at the provided origin, which we first need to offset
+            // from being a bottom corner to "center"
+            BoundingBox boundingBox = offsetCurve.GetBoundingBox(worldXYPlane);
+            double bboxHeight = boundingBox.Max.X - boundingBox.Min.X;
+            double bboxWidth = boundingBox.Max.Y - boundingBox.Min.Y;
+            origin += new Vector3d(bboxHeight / 2, bboxWidth / 2, 0);
+            origin += new Vector3d(thickness, 0, 0);
+            double xDiff = origin.X - boundingBox.Center.X;
+            double yDiff = origin.Y - boundingBox.Center.Y;
+            Transform translation = Transform.Translation(new Vector3d(xDiff, yDiff, 0));
+            offsetCurve.Transform(translation);
 
-            //// Place our curve to have concentric alignment with a bounding box
-            //// anchored at the provided origin
-            //BoundingBox boundingBox = offsetCurve.GetBoundingBox(worldXYPlane);
+            return offsetCurve;
 
         }
 
