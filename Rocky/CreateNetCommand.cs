@@ -139,11 +139,10 @@ namespace Rocky
             doc.Views.Redraw();
 
             // Finally, draw bottom rectangle
-            //bottomRightmostPoint += new Vector3d(BIRCH_CM / 2, 0, 0);
-            //Polyline bottomRect = generateBottomPoly(sectionPolyline,
-            //                                            bottomRightmostPoint,
-            //                                            thickness: BIRCH_CM);
-            //doc.Objects.AddPolyline(bottomRect.ToPolyline());
+            bottomRightmostPoint += new Vector3d(BIRCH_CM / 2, 0, 0);
+            Curve bottomCurve = generatePolyBottomCurve(objRef, bottomRightmostPoint,
+                                                        BIRCH_CM, shrinkToDimensions);
+            doc.Objects.AddCurve(bottomCurve);
 
             doc.Views.Redraw();
         }
@@ -159,7 +158,7 @@ namespace Rocky
             Curve[] contours = Brep.CreateContourCurves(brep, worldXYPlane);
             Curve sectionCurve = contours[0];
 
-            if (!shrinkToDimensions) {
+            if (shrinkToDimensions) {
                 return sectionCurve;
             }
 
