@@ -110,9 +110,20 @@ namespace Rocky
             doc.Objects.AddPolyline(sectionPolyline);
             doc.Views.Redraw();
 
-            // Generate rectangles + polygon based on the face dimensions
-            //Point3d bottomRightmostPoint;
-            //RhinoList<Rectangle3d> rectList = generatePolyRects(charCurve, out bottomRightmostPoint, BIRCH_CM);
+            double polyDepth = getWidthHeigthDepthVect(objRef).Z;
+
+             //Generate rectangles + polygon based on the face dimensions
+            Point3d bottomRightmostPoint;
+            Polyline currPoly;
+            RhinoList<Rectangle3d> rectList = generatePolyRects(sectionPolyline, polyDepth, out bottomRightmostPoint, BIRCH_CM);
+
+            foreach (Rectangle3d rect in rectList)
+            {
+                currPoly = rect.ToPolyline();
+                doc.Objects.AddPolyline(currPoly);
+            }
+            doc.Views.Redraw();
+
 
             // Loop through rectangles, drawing fingers (possibly just wait for line at end)
             // TODO
@@ -139,12 +150,39 @@ namespace Rocky
         }
 
         protected RhinoList<Rectangle3d> generatePolyRects(Polyline charCurve,
+                                                           double depth,
                                                   out Point3d bottomRightmostPoint,
                                                   double thickness = 0)
         {
-            RhinoList<Rectangle3d> rectList = new RhinoList<Rectangle3d>();
+            RhinoList<double> sectionDistances = new RhinoList<double>();
+            Line[] sectionSegments = charCurve.GetSegments();
 
-            bottomRightmostPoint = new Point3d(0, 0, 0);
+            foreach(Line segment in sectionSegments)
+            {
+                sectionDistances.Add(segment.Length);
+            }
+
+            // Add origin points, accounting for thickness
+            RhinoList<Point3d> origins = new RhinoList<Point3d>();
+            Point3d currOrigin = ORIGIN;
+
+            // Loop invariant: CURR_ORIGIN be safely added and incremented
+            foreach (double distance in sectionDistances)
+            {
+                origins.Add(currOrigin);
+                currOrigin += new Vector3d(distance + thickness, 0, 0);
+            }
+
+            RhinoList<Rectangle3d> rectList = new RhinoList<Rectangle3d>();
+            Rectangle3d currRect;
+            int i;
+            for (i = 0; i < origins.Count; i++)
+            {
+                currRect = MakeRect(origins[i], sectionDistances[i], depth, margin: BIRCH_CM);
+                rectList.Add(currRect);
+            }
+
+            bottomRightmostPoint = origins.Last + new Vector3d(sectionDistances[i - 1], 0, 0);
 
             return rectList;
         }
