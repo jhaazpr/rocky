@@ -105,10 +105,9 @@ namespace Rocky
 
         private void drawPolyNet(ObjRef objRef, RhinoDoc doc, bool shrinkToDimensions = false)
         {
-            // Get the characteristic face
-            //Polyline charCurve = getCharacteristicCurve(objRef);
-            Curve sectionCurve = getSectionCurve(objRef);
-            doc.Objects.AddCurve(sectionCurve);
+            // Get the section polyline
+            Polyline sectionPolyline = getSectionPolyline(objRef);
+            doc.Objects.AddPolyline(sectionPolyline);
             doc.Views.Redraw();
 
             // Generate rectangles + polygon based on the face dimensions
@@ -119,7 +118,7 @@ namespace Rocky
             // TODO
         }
 
-        private Curve getSectionCurve(ObjRef objRef)
+        private Polyline getSectionPolyline(ObjRef objRef)
         {
             Brep brep = objRef.Brep();
 
@@ -128,13 +127,15 @@ namespace Rocky
             Curve[] contours = Brep.CreateContourCurves(brep, worldXYPlane);
             Curve sectionCurve = contours[0];
 
-            // Have to approximate a polyline from the curve, though since we
-            // expert the section to be a polygon, the approximation should be
-            // the real deal
-            //Polyline polylineApprox = sectionCurve.ToPolyline();
+            Polyline sectionPolyline;
+            double[] sectionPolylineConversionResults;
+            bool success = sectionCurve.TryGetPolyline(out sectionPolyline, out sectionPolylineConversionResults);
 
-            //Rhino.Geometry.Collections.BrepFaceList brepFaces = brep.Faces;
-            return sectionCurve;
+            if (!success) {
+                throw new Exception("Cannot find section curve of polygon.");
+            }
+
+            return sectionPolyline;
         }
 
         protected RhinoList<Rectangle3d> generatePolyRects(Polyline charCurve,
