@@ -102,8 +102,6 @@ namespace Rocky
         {
             // Get the section polyline
             Polyline sectionPolyline = getSectionPolyline(objRef);
-            doc.Objects.AddPolyline(sectionPolyline);
-            doc.Views.Redraw();
 
             double polyDepth = getWidthHeigthDepthVect(objRef).Z;
 
