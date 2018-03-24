@@ -26,11 +26,27 @@ namespace Rocky
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
             const ObjectType selFilter = ObjectType.PolysrfFilter | ObjectType.Extrusion;
+            OptionToggle shrinkToDimensions = new OptionToggle(true, "Off", "On");
             ObjRef boxObjRef;
 
-            Result getObjResult = RhinoGet.GetOneObject("Select the box", false, selFilter, out boxObjRef);
-            if (getObjResult == Result.Success)
+            GetObject go = new GetObject();
+            go.SetCommandPrompt("Select the box to net-ify");
+            go.AddOptionToggle("Constrain", ref shrinkToDimensions);
+            go.GeometryFilter = selFilter;
+
+            go.GroupSelect = false;
+            go.SubObjectSelect = false;
+            go.EnableClearObjectsOnEntry(true);
+            go.EnableUnselectObjectsOnExit(true);
+            go.DeselectAllBeforePostSelect = true;
+            go.EnablePreSelect(false, true);
+            go.EnablePressEnterWhenDonePrompt(true);
+
+            GetResult getObjResult = go.Get();
+            if (getObjResult == GetResult.Object)
             {
+                boxObjRef = go.Object(0);
+
                 drawNetFromObjRef(boxObjRef, doc);
                 return Result.Success;
             }
