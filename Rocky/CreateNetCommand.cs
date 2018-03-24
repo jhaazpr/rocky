@@ -106,19 +106,35 @@ namespace Rocky
         private void drawPolyNet(ObjRef objRef, RhinoDoc doc, bool shrinkToDimensions = false)
         {
             // Get the characteristic face
-            Polyline charCurve = getCharacteristicCurve(objRef);
+            //Polyline charCurve = getCharacteristicCurve(objRef);
+            Curve sectionCurve = getSectionCurve(objRef);
+            doc.Objects.AddCurve(sectionCurve);
+            doc.Views.Redraw();
 
             // Generate rectangles + polygon based on the face dimensions
-            Point3d bottomRightmostPoint;
-            RhinoList<Rectangle3d> rectList = generatePolyRects(charCurve, out bottomRightmostPoint, BIRCH_CM);
+            //Point3d bottomRightmostPoint;
+            //RhinoList<Rectangle3d> rectList = generatePolyRects(charCurve, out bottomRightmostPoint, BIRCH_CM);
 
             // Loop through rectangles, drawing fingers (possibly just wait for line at end)
             // TODO
         }
 
-        private Polyline getCharacteristicCurve(ObjRef objRef)
+        private Curve getSectionCurve(ObjRef objRef)
         {
-            return new Polyline();
+            Brep brep = objRef.Brep();
+
+            Vector3d zNorm = new Vector3d(0, 0, 1);
+            Plane worldXYPlane = new Plane(ORIGIN, zNorm);
+            Curve[] contours = Brep.CreateContourCurves(brep, worldXYPlane);
+            Curve sectionCurve = contours[0];
+
+            // Have to approximate a polyline from the curve, though since we
+            // expert the section to be a polygon, the approximation should be
+            // the real deal
+            //Polyline polylineApprox = sectionCurve.ToPolyline();
+
+            //Rhino.Geometry.Collections.BrepFaceList brepFaces = brep.Faces;
+            return sectionCurve;
         }
 
         protected RhinoList<Rectangle3d> generatePolyRects(Polyline charCurve,
