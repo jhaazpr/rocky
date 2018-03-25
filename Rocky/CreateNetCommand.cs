@@ -45,7 +45,7 @@ namespace Rocky
                 if (getObjResult == GetResult.Object)
                 {
                     boxObjRef = go.Object(0);
-                    go.Object(0).Object().Select(on: true, syncHighlight: true);
+                    boxObjRef.Object().Select(on: true, syncHighlight: true);
                     go.EnablePreSelect(false, true);
                     go.AcceptNothing(true);
                     continue;
@@ -61,7 +61,7 @@ namespace Rocky
                 {
                     if (boxObjRef != null)
                     {
-                        drawNetFromObjRef(boxObjRef, doc);
+                        drawNetFromObjRef(boxObjRef, doc, shrinkToDimensions.CurrentValue);
                         return Result.Success;
                     }
                 }
@@ -81,7 +81,7 @@ namespace Rocky
         protected void drawNetFromObjRef(ObjRef objRef, RhinoDoc doc, bool shrinkToDimensions = false)
         {
             //drawBoxNet(objRef, doc);
-            drawPolyNet(objRef, doc);
+            drawPolyNet(objRef, doc, BIRCH_CM, shrinkToDimensions);
         }
 
         private void drawBoxNet(ObjRef boxObjRef, RhinoDoc doc, bool shrinkToDimensions = false)
@@ -89,8 +89,10 @@ namespace Rocky
             Vector3d widthHeightDepthVect = getWidthHeigthDepthVect(boxObjRef);
             Point3d bottomRightmostPoint;
 
+            double effectiveNetThickness = shrinkToDimensions ? 0 : BIRCH_CM;
+
             RhinoList<Rectangle3d> rectList = generateNetRects(widthHeightDepthVect, out bottomRightmostPoint,
-                                                               thickness: BIRCH_CM);
+                                                               thickness: effectiveNetThickness);
 
             Polyline polyline;
             Polyline[] explodedLines;
@@ -130,16 +132,18 @@ namespace Rocky
             doc.Views.Redraw();
         }
 
-        private void drawPolyNet(ObjRef objRef, RhinoDoc doc, bool shrinkToDimensions = false)
+        private void drawPolyNet(ObjRef objRef, RhinoDoc doc, double thickness, bool shrinkToDimensions = false)
         {
             // Get the section polyline
             Polyline sectionPolyline = getSectionPolyline(objRef);
 
             double polyDepth = getWidthHeigthDepthVect(objRef).Z;
 
+            double effectiveNetThickness = shrinkToDimensions ? -thickness : thickness;
+
              //Generate rectangles + polygon based on the face dimensions
             Point3d bottomRightmostPoint;
-            RhinoList<Rectangle3d> rectList = generatePolyRects(sectionPolyline, polyDepth, out bottomRightmostPoint, BIRCH_CM);
+            RhinoList<Rectangle3d> rectList = generatePolyRects(sectionPolyline, polyDepth, out bottomRightmostPoint, effectiveNetThickness);
 
             Polyline polyline;
             Polyline[] explodedLines;
@@ -148,7 +152,7 @@ namespace Rocky
 
             // Draw the first finger leftmost before iterating
             jointLine = new Line(rectList[0].Corner(0), rectList[0].Corner(3));
-            polyline = generateFingerJoint(jointLine, BIRCH_CM);
+            polyline = generateFingerJoint(jointLine, thickness);
             doc.Objects.AddPolyline(polyline);
 
             foreach (Rectangle3d rect in rectList)
@@ -159,7 +163,7 @@ namespace Rocky
                 jointLine = new Line(rightEdgeBottom, rightEdgeTop);
 
                 // Draw on both sides of seam
-                polyline = generateFingerJoint(jointLine, BIRCH_CM);
+                polyline = generateFingerJoint(jointLine, thickness);
                 doc.Objects.AddPolyline(polyline);
 
                 // Then draw rectangle itself, explode, and remove seams
@@ -171,9 +175,9 @@ namespace Rocky
             doc.Views.Redraw();
 
             // Finally, draw bottom rectangle
-            bottomRightmostPoint += new Vector3d(BIRCH_CM / 2, 0, 0);
+            bottomRightmostPoint += new Vector3d(effectiveNetThickness / 2, 0, 0);
             Curve bottomCurve = generatePolyBottomCurve(objRef, bottomRightmostPoint,
-                                                        BIRCH_CM, shrinkToDimensions);
+                                                        thickness, shrinkToDimensions);
             doc.Objects.AddCurve(bottomCurve);
 
             doc.Views.Redraw();
@@ -267,7 +271,7 @@ namespace Rocky
             int i;
             for (i = 0; i < origins.Count; i++)
             {
-                currRect = MakeRect(origins[i], sectionDistances[i], depth, margin: BIRCH_CM);
+                currRect = MakeRect(origins[i], sectionDistances[i], depth, margin: thickness);
                 rectList.Add(currRect);
             }
 
