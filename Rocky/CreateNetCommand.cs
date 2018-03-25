@@ -26,31 +26,47 @@ namespace Rocky
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
             const ObjectType selFilter = ObjectType.PolysrfFilter | ObjectType.Extrusion;
-            OptionToggle shrinkToDimensions = new OptionToggle(true, "Off", "On");
-            ObjRef boxObjRef;
+            bool value = false;
+            OptionToggle shrinkToDimensions = new OptionToggle(value, "Off", "On");
+            ObjRef boxObjRef = null;
 
             GetObject go = new GetObject();
             go.SetCommandPrompt("Select the box to net-ify");
             go.AddOptionToggle("Constrain", ref shrinkToDimensions);
             go.GeometryFilter = selFilter;
 
-            go.GroupSelect = false;
-            go.SubObjectSelect = false;
             go.EnableClearObjectsOnEntry(true);
             go.EnableUnselectObjectsOnExit(true);
-            go.DeselectAllBeforePostSelect = true;
-            go.EnablePreSelect(false, true);
-            go.EnablePressEnterWhenDonePrompt(true);
 
-            GetResult getObjResult = go.Get();
-            if (getObjResult == GetResult.Object)
+            // TODO: clean up this hot mess
+            for (;;)
             {
-                boxObjRef = go.Object(0);
+                GetResult getObjResult = go.Get();
+                if (getObjResult == GetResult.Object)
+                {
+                    boxObjRef = go.Object(0);
+                    go.Object(0).Object().Select(on: true, syncHighlight: true);
+                    go.EnablePreSelect(false, true);
+                    go.AcceptNothing(true);
+                    continue;
+                }
 
-                drawNetFromObjRef(boxObjRef, doc);
-                return Result.Success;
+                else if (getObjResult == GetResult.Cancel)
+                {
+                    return Result.Cancel;
+                }
+
+                // Case where user presses enter
+                else if (getObjResult == GetResult.Nothing)
+                {
+                    if (boxObjRef != null)
+                    {
+                        drawNetFromObjRef(boxObjRef, doc);
+                        return Result.Success;
+                    }
+                }
             }
-            return Result.Failure;
+
         }
 
         /*
