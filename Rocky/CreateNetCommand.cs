@@ -190,22 +190,21 @@ namespace Rocky
             Curve[] contours = Brep.CreateContourCurves(brep, worldXYPlane);
             Curve sectionCurve = contours[0];
 
-            if (shrinkToDimensions) {
-                return sectionCurve;
-            }
+            if (!shrinkToDimensions) {
+                Curve[] offsetCurves = sectionCurve.Offset(worldXYPlane, thickness,
+                                           0, CurveOffsetCornerStyle.Sharp);
+                if (offsetCurves.Length != 1)
+                {
+                    throw new Exception("Could not properly offset curve.");
+                }
 
-            Curve[] offsetCurves = sectionCurve.Offset(worldXYPlane, thickness,
-                                                       0, CurveOffsetCornerStyle.Sharp);
-            if (offsetCurves.Length != 1) {
-                throw new Exception("Could not properly offset curve.");
+                sectionCurve = offsetCurves[0];
             }
-
-            Curve offsetCurve = offsetCurves[0];
 
             // Place our curve to have concentric alignment with a bounding box
             // anchored at the provided origin, which we first need to offset
             // from being a bottom corner to "center"
-            BoundingBox boundingBox = offsetCurve.GetBoundingBox(worldXYPlane);
+            BoundingBox boundingBox = sectionCurve.GetBoundingBox(worldXYPlane);
             double bboxHeight = boundingBox.Max.X - boundingBox.Min.X;
             double bboxWidth = boundingBox.Max.Y - boundingBox.Min.Y;
             origin += new Vector3d(bboxHeight / 2, bboxWidth / 2, 0);
@@ -213,9 +212,9 @@ namespace Rocky
             double xDiff = origin.X - boundingBox.Center.X;
             double yDiff = origin.Y - boundingBox.Center.Y;
             Transform translation = Transform.Translation(new Vector3d(xDiff, yDiff, 0));
-            offsetCurve.Transform(translation);
+            sectionCurve.Transform(translation);
 
-            return offsetCurve;
+            return sectionCurve;
 
         }
 
