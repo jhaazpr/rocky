@@ -17,6 +17,7 @@ namespace Rocky
         public static readonly Point3d ORIGIN = new Point3d(0, 0, 0);
         public static readonly double BIRCH_MM = 3.17;
         public static readonly double BIRCH_CM = .317;
+        public static readonly double ZERO_CM = 0.0;
 
         public override string EnglishName
         {
@@ -27,12 +28,16 @@ namespace Rocky
         {
             const ObjectType selFilter = ObjectType.PolysrfFilter | ObjectType.Extrusion;
             bool value = false;
+            double preShrinkValue = ZERO_CM;
+
             OptionToggle shrinkToDimensions = new OptionToggle(value, "Off", "On");
+            OptionDouble preShrink = new OptionDouble(preShrinkValue, 0.0, 1.0);
             ObjRef boxObjRef = null;
 
             GetObject go = new GetObject();
             go.SetCommandPrompt("Select the box to net-ify");
             go.AddOptionToggle("Constrain", ref shrinkToDimensions);
+            go.AddOptionDouble("PreShrink", ref preShrink, "Preshrink");
             go.GeometryFilter = selFilter;
 
             go.EnableClearObjectsOnEntry(true);
