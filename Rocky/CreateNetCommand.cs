@@ -66,6 +66,11 @@ namespace Rocky
                 {
                     if (boxObjRef != null)
                     {
+                        preShrinkValue = preShrink.CurrentValue;
+                        if (preShrinkValue != ZERO_CM)
+                        {
+                            boxObjRef = shrinkBoxObj(boxObjRef, preShrinkValue);
+                        }
                         drawNetFromObjRef(boxObjRef, doc, shrinkToDimensions.CurrentValue);
                         return Result.Success;
                     }
@@ -404,6 +409,18 @@ namespace Rocky
 
             Rectangle3d rect = new Rectangle3d(worldXYPlane, xAxisPt, yAxisPt);
             return rect;
+        }
+
+        private ObjRef shrinkBoxObj(ObjRef boxObjRef, double preShrinkValue)
+        {
+            Brep brep = boxObjRef.Brep();
+            BoundingBox boundingBox = brep.GetBoundingBox(accurate: false);
+            Point3d bboxCenter = boundingBox.Center;
+
+
+            Transform scale = Transform.Scale(bboxCenter, preShrinkValue);
+            brep.Transform(scale);
+            return boxObjRef;
         }
     }
 }
